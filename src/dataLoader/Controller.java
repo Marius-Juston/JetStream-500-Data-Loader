@@ -1,4 +1,4 @@
-package sample;
+package dataLoader;
 
 import java.io.BufferedReader;
 import java.io.File;

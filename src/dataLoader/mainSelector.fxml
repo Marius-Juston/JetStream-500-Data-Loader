@@ -5,11 +5,11 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.VBox?>
 <VBox xmlns:fx="http://javafx.com/fxml/1" alignment="CENTER" spacing="5.0" xmlns="http://javafx.com/javafx/8"
-  fx:controller="sample.Controller">
+  fx:controller="dataLoader.Controller">
   <children>
     <TextField promptText="Enter the MPH interval to go by" text="10" fx:id="intervalNumber"/>
-    <Button mnemonicParsing="false" onAction="#createCVSFile" text="Open File(s)" fx:id="fileLoader"
-      defaultButton="true"/>
+    <Button defaultButton="true" mnemonicParsing="false" onAction="#createCVSFile" text="Open File(s)"
+      fx:id="fileLoader"/>
   </children>
   <padding>
     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
