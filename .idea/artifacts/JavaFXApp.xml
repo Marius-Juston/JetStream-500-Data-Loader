@@ -1,0 +1,20 @@
+<component name="ArtifactManager">
+  <artifact type="javafx" name="JavaFXApp">
+    <output-path>$PROJECT_DIR$/out/artifacts/JavaFXApp</output-path>
+    <properties id="javafx-properties">
+      <options>
+        <option name="appClass" value="sample.Main" />
+        <option name="description" value="Get the lift and drag data from multiple .JET files all into a single .csv" />
+        <option name="htmlPlaceholderId" value="" />
+        <option name="title" value="JetStream 500 Data Loader" />
+        <option name="vendor" value="Marius Juston" />
+        <option name="version" value="" />
+      </options>
+    </properties>
+    <root id="root">
+      <element id="archive" name="JavaFXApp.jar">
+        <element id="module-output" name="JetStream 500 Data Loader" />
+      </element>
+    </root>
+  </artifact>
+</component>
