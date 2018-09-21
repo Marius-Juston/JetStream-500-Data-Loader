@@ -15,7 +15,9 @@ import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
@@ -23,27 +25,37 @@ import javafx.scene.control.TextFormatter.Change;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Window;
+import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 
 public class Controller implements Initializable {
 
+  private static final int DEFAULT_MPH = 10;
+  private final Pattern angleOfAttackPattern = Pattern.compile("[+]?([-]?\\d+)");
+  private final Pattern numberPattern = Pattern.compile("[+]?([-]?[\\d.]+),\\s[+]?([-]?[\\d.]+),\\s[+]?([-]?[\\d.]+)");
+  private final FileChooser fileChooser = new FileChooser();
+  private final FileChooser fileSaver = new FileChooser();
+  @FXML
   public Button fileLoader;
-  public TextField intervalNumber;
-  private Pattern angleOfAttackPattern = Pattern.compile("[+]?([-]?\\d+)");
-  private Pattern numberPattern = Pattern.compile("[+]?([-]?[\\d.]+),\\s[+]?([-]?[\\d.]+),\\s[+]?([-]?[\\d.]+)");
-  private FileChooser fileChooser = new FileChooser();
-  private FileChooser fileSaver = new FileChooser();
+  @FXML
+  private TextField intervalNumber;
+  @FXML
+  private TextField startMPH;
+  @FXML
+  private TextField airDensity;
+  @FXML
+  private TextField referenceArea;
   private File startLocation = fileChooser.getInitialDirectory();
 
   /**
    * Button input handle getting the file information and concatenating it together in a clear way
    */
-  public void createCVSFile(ActionEvent event) throws IOException {
+  public final void createCVSFile(ActionEvent event) throws IOException {
 //    Gets the initial directory of the file chooser makes it easier if you are running the program multiple times
     fileChooser.setInitialDirectory(startLocation);
 
 //    Opens window
-    Window window = ((Button) event.getSource()).getScene().getWindow();
+    Window window = ((Node) event.getSource()).getScene().getWindow();
     List<File> files = fileChooser.showOpenMultipleDialog(window);
 
 //    If the user did select a file
@@ -64,7 +76,7 @@ public class Controller implements Initializable {
    *
    * @param files the files to extract the data from
    */
-  private HashMap<Integer, List<LiftDragData>> loadFiles(List<File> files) throws IOException {
+  private HashMap<Integer, List<LiftDragData>> loadFiles(Iterable<File> files) throws IOException {
     HashMap<Integer, List<LiftDragData>> angleOfAttackToLiftDraftData = new HashMap<>();
 
 //    Lists through the files
@@ -105,7 +117,8 @@ public class Controller implements Initializable {
 //      Open the file and write to it
       try (FileWriter fileWriter = new FileWriter(file)) {
 //        Created string builder for efficiency
-        StringBuilder stringBuilder = new StringBuilder("Angle of Attack, MPH, Lift, Drag\n");
+        StringBuilder stringBuilder = new StringBuilder(
+            "Angle of Attack, MPH, Lift, Drag, Lift/Drag, Coefficient of Lift, Coefficient of Drag\n");
 
 //        Iterates through all the angle of attacks from lowest to highest
         for (Integer angleOfAttack : angleOfAttacks) {
@@ -113,8 +126,11 @@ public class Controller implements Initializable {
           for (LiftDragData liftDragData : angleOfAttackToLiftDraftData.get(angleOfAttack)) {
 //            The data in the .csv will be formatted as "angleOfAttack, mph,lift, drag" exactly
             stringBuilder
-                .append(String.format("%d, %f, %f, %f%n", angleOfAttack, liftDragData.getMph(), liftDragData.getLift(),
-                    liftDragData.getDrag()));
+                .append(String
+                    .format("%d, %f, %f, %f %f %f %f%n", angleOfAttack, liftDragData.getMph(), liftDragData.getLift(),
+                        liftDragData.getDrag(), liftDragData.getLiftDividedByDrag(),
+                        liftDragData.getCoefficientOfLift(),
+                        liftDragData.getCoefficientOfDrag()));
           }
         }
 
@@ -132,6 +148,9 @@ public class Controller implements Initializable {
   private List<LiftDragData> findLiftDragData(File file) throws IOException {
     List<LiftDragData> liftDragDataList = new LinkedList<>();
 
+    double airDensity = Double.parseDouble(this.airDensity.getText());
+    double referenceArea = Double.parseDouble(this.referenceArea.getText());
+
 //    To read through the file
     try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
 
@@ -146,7 +165,7 @@ public class Controller implements Initializable {
       double previousDrag = 0;
 
 //      First interval starts at 0
-      double currentInterval = 0;
+      double currentInterval = Double.parseDouble(startMPH.getText());
 
 //      Goes through the available lines in the file
       while ((line = bufferedReader.readLine()) != null) {
@@ -168,22 +187,23 @@ public class Controller implements Initializable {
 
 //            If it is the first interval
             if (currentInterval == 0) {
-              liftDragDataList.add(new LiftDragData(mph, lift, drag));
+              liftDragDataList.add(new LiftDragData(mph, lift, drag, airDensity, referenceArea));
 
 //              System.out.printf("%f %f %f%n", mph, lift, drag);
 
 //              Increment the interval by the number in the textfield
               currentInterval += Double.parseDouble(intervalNumber.getText());
-            } else if (currentInterval >= previousMPH && currentInterval <= mph) {
+            } else if ((currentInterval >= previousMPH) && (currentInterval <= mph)) {
 //              If the previous mph and the current mph are between the current interval. Ex: 45 < 50 < 51 interval == 50
 
 //              Gets if the closest mph is the previous or the current mph has the smallest distance between the interval
-              if (currentInterval - previousMPH < mph - currentInterval) {
-                liftDragDataList.add(new LiftDragData(previousMPH, previousLift, previousDrag));
+              if ((currentInterval - previousMPH) < (mph - currentInterval)) {
+                liftDragDataList
+                    .add(new LiftDragData(previousMPH, previousLift, previousDrag, airDensity, referenceArea));
 
 //                System.out.printf("%f %f %f%n", previousMPH, previousLift, previousDrag);
               } else {
-                liftDragDataList.add(new LiftDragData(mph, lift, drag));
+                liftDragDataList.add(new LiftDragData(mph, lift, drag, airDensity, referenceArea));
 //                System.out.printf("%f %f %f%n", mph, lift, drag);
               }
 
@@ -203,8 +223,8 @@ public class Controller implements Initializable {
 
 //      This is for the scenario of if the last number is >= half the half of the incrementation to add it.
 //      This is for the cases like the last point is 59.9 and the interval is 60
-      if (previousMPH >= currentInterval - Double.parseDouble(intervalNumber.getText()) / 2.0) {
-        liftDragDataList.add(new LiftDragData(previousMPH, previousLift, previousDrag));
+      if (previousMPH >= (currentInterval - (Double.parseDouble(intervalNumber.getText()) / 2.0))) {
+        liftDragDataList.add(new LiftDragData(previousMPH, previousLift, previousDrag, airDensity, referenceArea));
 //        System.out.printf("%f %f %f%n", previousMPH, previousLift, previousDrag);
       }
     }
@@ -241,9 +261,9 @@ public class Controller implements Initializable {
 //        Reads through the lines
         while ((line = br.readLine()) != null) {
           // If it is the start of the comment section
-          if (line.equals("[")) {
+          if ("[".equals(line)) {
             comment = true;
-          } else if (comment && line.equals("Wind, Lift, Drag=") && "]".equals(previous)) {
+          } else if (comment && "Wind, Lift, Drag=".equals(line) && "]".equals(previous)) {
             break;
           }
 
@@ -267,7 +287,7 @@ public class Controller implements Initializable {
   }
 
   @Override
-  public void initialize(URL location, ResourceBundle resources) {
+  public final void initialize(URL location, ResourceBundle resources) {
     //Sets the extensions for the file choosers and the file saver
     fileChooser.getExtensionFilters().add(new ExtensionFilter("JET Files", "*.JET"));
     fileSaver.getExtensionFilters().add(new ExtensionFilter("CSV Files", "*.csv"));
@@ -280,40 +300,85 @@ public class Controller implements Initializable {
       }
       return null;
     };
+//    Checks that the text is actually a number
+    UnaryOperator<Change> doubleFilter = change -> {
+      String newText = change.getControlNewText();
+      if (newText.matches("-?([0-9]*(\\.[0-9]*)?)?")) {
+        return change;
+      }
+      return null;
+    };
 
 //    Adds a number text formatter checker
     intervalNumber.setTextFormatter(
-        new TextFormatter<>(new IntegerStringConverter(), 10, integerFilter));
+        new TextFormatter<>(new IntegerStringConverter(), DEFAULT_MPH, integerFilter));
+//    Adds a number text formatter checker
+    startMPH.setTextFormatter(
+        new TextFormatter<>(new IntegerStringConverter(), DEFAULT_MPH, integerFilter));
+//    Adds a number text formatter checker
+    airDensity.setTextFormatter(
+        new TextFormatter<>(new DoubleStringConverter(), 1.0, doubleFilter));
+//    Adds a number text formatter checker
+    referenceArea.setTextFormatter(
+        new TextFormatter<>(new DoubleStringConverter(), 1.0, doubleFilter));
 
 
   }
 
-  private class LiftDragData {
+  private static class LiftDragData {
 
-    private double mph;
-    private double lift;
-    private double drag;
+    private final double mph;
+    private final double lift;
+    private final double drag;
+    private final double coefficientOfLift;
+    private final double coefficientOfDrag;
 
-    public LiftDragData(double mph, double lift, double drag) {
+    LiftDragData(double mph, double lift, double drag, double airDensity,
+        double referenceArea) {
       this.mph = mph;
       this.lift = lift;
       this.drag = drag;
+
+      coefficientOfLift = calculateCoefficient(lift, getFeetPerSeconds(), airDensity, referenceArea);
+      coefficientOfDrag = calculateCoefficient(drag, getFeetPerSeconds(), airDensity, referenceArea);
     }
 
-    public double getMph() {
+    private double calculateCoefficient(
+        double lift, double feetPerSeconds, double airDensity, double referenceArea) {
+      return (2 * lift) / (airDensity * (feetPerSeconds * feetPerSeconds) * referenceArea);
+    }
+
+    final double getFeetPerSeconds() {
+      return (mph * 88) / 60;
+    }
+
+    final double getMph() {
       return mph;
     }
 
-    public double getLift() {
+    final double getLift() {
       return lift;
     }
 
-    public double getDrag() {
+    final double getDrag() {
       return drag;
     }
 
+    final double getLiftDividedByDrag() {
+      return lift / drag;
+    }
+
+
+    final double getCoefficientOfLift() {
+      return coefficientOfLift;
+    }
+
+    final double getCoefficientOfDrag() {
+      return coefficientOfDrag;
+    }
+
     @Override
-    public String toString() {
+    public final String toString() {
       return "LiftDragData{" +
           "lift=" + lift +
           ", drag=" + drag +
