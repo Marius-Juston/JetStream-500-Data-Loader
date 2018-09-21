@@ -1,6 +1,6 @@
 <component name="ArtifactManager">
-  <artifact type="javafx" name="JavaFXApp">
-    <output-path>$PROJECT_DIR$/out/artifacts/JavaFXApp</output-path>
+  <artifact type="javafx" name="JetStream 500 Data Loader">
+    <output-path>$PROJECT_DIR$/out/artifacts/JetStream_500_Data_Loader</output-path>
     <properties id="javafx-properties">
       <options>
         <option name="appClass" value="dataLoader.Main" />
