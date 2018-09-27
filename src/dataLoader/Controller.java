@@ -127,7 +127,8 @@ public class Controller implements Initializable {
 //            The data in the .csv will be formatted as "angleOfAttack, mph,lift, drag" exactly
             stringBuilder
                 .append(String
-                    .format("%d, %f, %f, %f %f %f %f%n", angleOfAttack, liftDragData.getMph(), liftDragData.getLift(),
+                    .format("%d, %f, %f, %f, %f, %f, %f%n", angleOfAttack, liftDragData.getMph(),
+                        liftDragData.getLift(),
                         liftDragData.getDrag(), liftDragData.getLiftDividedByDrag(),
                         liftDragData.getCoefficientOfLift(),
                         liftDragData.getCoefficientOfDrag()));
@@ -349,7 +350,7 @@ public class Controller implements Initializable {
     }
 
     final double getFeetPerSeconds() {
-      return (mph * 88) / 60;
+      return mph * (88.0 / 60.0);
     }
 
     final double getMph() {
@@ -367,7 +368,6 @@ public class Controller implements Initializable {
     final double getLiftDividedByDrag() {
       return lift / drag;
     }
-
 
     final double getCoefficientOfLift() {
       return coefficientOfLift;
