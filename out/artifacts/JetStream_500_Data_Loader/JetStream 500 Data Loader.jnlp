@@ -8,7 +8,7 @@
   </information>
   <resources>
     <j2se version="1.6+" href="http://java.sun.com/products/autodl/j2se"/>
-    <jar href="JetStream 500 Data Loader.jar" size="8369" download="eager" />
+    <jar href="JetStream 500 Data Loader.jar" size="8364" download="eager" />
   </resources>
   <jfx:javafx-desc  width="600" height="400" main-class="dataLoader.Main"  name="JetStream 500 Data Loader" />
   <update check="background"/>
